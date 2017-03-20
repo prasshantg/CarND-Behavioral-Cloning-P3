@@ -81,9 +81,10 @@ train_generator = generator(train_samples, batch_size=16)
 validation_generator = generator(validation_samples, batch_size=16)
 
 if __name__ == '__main__':
-	print(len(lines))
+	print("Number of samples {0}".format(len(train_samples)))
+	print("Number of batches {0}".format((len(train_samples) + 15)/16))
 	model = get_model()
-	model.fit_generator(train_generator, steps_per_epoch=len(train_samples)/16,\
+	model.fit_generator(train_generator, steps_per_epoch=(len(train_samples)+15)/16,\
 			validation_data=validation_generator, nb_val_samples=len(validation_samples),\
-			nb_epoch=3)
+			nb_epoch=10)
 	model.save('model.h5')
