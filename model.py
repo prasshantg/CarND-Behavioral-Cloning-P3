@@ -11,6 +11,7 @@ import sklearn
 
 lines = []
 
+#Dataset1
 with open('driving_log.csv') as csvfile:
 	reader = csv.reader(csvfile)
 	for line in reader:
@@ -30,6 +31,7 @@ for line in lines:
 	current_path = 'IMG/' + filename
 	line[2] = current_path
 
+#Dataset2
 lines1 = []
 with open('TrainingData1/driving_log.csv') as csvfile:
 	reader = csv.reader(csvfile)
@@ -50,21 +52,8 @@ for line1 in lines1:
 	current_path = 'TrainingData1/IMG/' + filename
 	line1[2] = current_path
 	lines.append(line1)
-'''
-lines2 = []
-with open('SampleData/driving_log.csv') as csvfile:
-	reader = csv.reader(csvfile)
-	for line2 in reader:
-		lines2.append(line2)
 
-for line2 in lines2:
-	source_path = line2[0]
-	filename = source_path.split('/')[-1]
-	current_path = 'SampleData/IMG/' + filename
-	line2[0] = current_path
-	lines.append(line2)
-'''
-
+#Dataset3
 lines3 = []
 with open('TrainingData3/driving_log.csv') as csvfile:
 	reader = csv.reader(csvfile)
@@ -86,8 +75,10 @@ for line3 in lines3:
 	line3[2] = current_path
 	lines.append(line3)
 
+#Split dataset into training and validation dataset
 train_samples, validation_samples = train_test_split(lines, test_size=0.2)
 
+#Implement generator
 def generator(samples, batch_size=16, training=True):
 	num_samples = len(samples)
 
@@ -100,14 +91,22 @@ def generator(samples, batch_size=16, training=True):
 			angles = []
 
 			for batch_sample in batch_samples:
+				#Images from center camera
 				name = batch_sample[0]
 				center_image = cv2.imread(name)
 				center_image = cv2.cvtColor(center_image, cv2.COLOR_BGR2RGB)
 				center_angle = float(batch_sample[3])
 				images.append(center_image)
 				angles.append(center_angle)
-'''
+
 				if (training == True):
+					#Flip images from center camera
+					image_flipped = np.fliplr(center_image)
+					angle_flipped = -center_angle
+					images.append(image_flipped)
+					angles.append(angle_flipped)
+
+					#Images from left camera
 					left_name = batch_sample[1]
 					left_image = cv2.imread(left_name)
 					left_image = cv2.cvtColor(left_image, cv2.COLOR_BGR2RGB)
@@ -115,6 +114,7 @@ def generator(samples, batch_size=16, training=True):
 					images.append(left_image)
 					angles.append(left_angle)
 
+					#Images from right camera
 					right_name = batch_sample[2]
 					right_image = cv2.imread(right_name)
 					right_image = cv2.cvtColor(right_image, cv2.COLOR_BGR2RGB)
@@ -122,14 +122,9 @@ def generator(samples, batch_size=16, training=True):
 					images.append(right_image)
 					angles.append(right_angle)
 
-					image_flipped = np.fliplr(center_image)
-					angle_flipped = -center_angle
-					images.append(image_flipped)
-					angles.append(angle_flipped)
-'''
-
 			X_train = np.array(images)
 			y_train = np.array(angles)
+
 			yield sklearn.utils.shuffle(X_train, y_train)
 
 def get_model():
@@ -142,13 +137,11 @@ def get_model():
 	Model.add(Convolution2D(filters=64, kernel_size=(3, 3), strides=(1, 1), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
 	Model.add(Convolution2D(filters=64, kernel_size=(3, 3), strides=(1, 1), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
 	Model.add(Flatten())
-	Model.add(Dense(100))
+	Model.add(Dense(100, use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
 	Model.add(Dropout(.5))
-	Model.add(ELU())
-	Model.add(Dense(50))
+	Model.add(Dense(50, use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
 	Model.add(Dropout(.5))
-	Model.add(ELU())
-	Model.add(Dense(10))
+	Model.add(Dense(10, use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
 	Model.add(Dense(1))
 	Model.compile(loss='mse', optimizer='adam')
 
@@ -175,5 +168,5 @@ if __name__ == '__main__':
 	model = get_model()
 	model.fit_generator(train_generator, steps_per_epoch=(len(train_samples)+15)/16,\
 			validation_data=validation_generator, nb_val_samples=len(validation_samples),\
-			nb_epoch=5)
+			nb_epoch=7)
 	model.save('model.h5')
