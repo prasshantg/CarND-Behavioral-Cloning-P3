@@ -88,7 +88,7 @@ for line3 in lines3:
 
 train_samples, validation_samples = train_test_split(lines, test_size=0.2)
 
-def generator(samples, batch_size=16):
+def generator(samples, batch_size=16, training=True):
 	num_samples = len(samples)
 
 	while 1:
@@ -104,37 +104,56 @@ def generator(samples, batch_size=16):
 				center_image = cv2.imread(name)
 				center_image = cv2.cvtColor(center_image, cv2.COLOR_BGR2RGB)
 				center_angle = float(batch_sample[3])
-				left_name = batch_sample[1]
-				left_image = cv2.imread(left_name)
-				left_image = cv2.cvtColor(left_image, cv2.COLOR_BGR2RGB)
-				left_angle = center_angle + 0.2
-				right_name = batch_sample[2]
-				right_image = cv2.imread(right_name)
-				right_image = cv2.cvtColor(right_image, cv2.COLOR_BGR2RGB)
-				right_angle = center_angle - 0.2
 				images.append(center_image)
 				angles.append(center_angle)
-				image_flipped = np.fliplr(center_image)
-				angle_flipped = -center_angle
-				images.append(image_flipped)
-				angles.append(angle_flipped)
-				images.append(left_image)
-				images.append(right_image)
-				angles.append(left_angle)
-				angles.append(right_angle)
-#				print(name)
-#				print(left_name)
-#				print(right_name)
+'''
+				if (training == True):
+					left_name = batch_sample[1]
+					left_image = cv2.imread(left_name)
+					left_image = cv2.cvtColor(left_image, cv2.COLOR_BGR2RGB)
+					left_angle = center_angle + 0.2
+					images.append(left_image)
+					angles.append(left_angle)
+
+					right_name = batch_sample[2]
+					right_image = cv2.imread(right_name)
+					right_image = cv2.cvtColor(right_image, cv2.COLOR_BGR2RGB)
+					right_angle = center_angle - 0.2
+					images.append(right_image)
+					angles.append(right_angle)
+
+					image_flipped = np.fliplr(center_image)
+					angle_flipped = -center_angle
+					images.append(image_flipped)
+					angles.append(angle_flipped)
+'''
 
 			X_train = np.array(images)
 			y_train = np.array(angles)
-#			print(X_train.shape)
 			yield sklearn.utils.shuffle(X_train, y_train)
 
 def get_model():
 	Model = Sequential()
 	Model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(160, 320,3)))
 	Model.add(Lambda(lambda x: x/127.5 - 1.0))
+	Model.add(Convolution2D(filters=24, kernel_size=(5, 5), strides=(2, 2), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
+	Model.add(Convolution2D(filters=36, kernel_size=(5, 5), strides=(2, 2), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
+	Model.add(Convolution2D(filters=48, kernel_size=(5, 5), strides=(2, 2), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
+	Model.add(Convolution2D(filters=64, kernel_size=(3, 3), strides=(1, 1), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
+	Model.add(Convolution2D(filters=64, kernel_size=(3, 3), strides=(1, 1), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
+	Model.add(Flatten())
+	Model.add(Dense(100))
+	Model.add(Dropout(.5))
+	Model.add(ELU())
+	Model.add(Dense(50))
+	Model.add(Dropout(.5))
+	Model.add(ELU())
+	Model.add(Dense(10))
+	Model.add(Dense(1))
+	Model.compile(loss='mse', optimizer='adam')
+
+	return Model
+
 '''
 	Model.add(Convolution2D(filters=16, kernel_size=(4, 4), strides=(4, 4), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
 	Model.add(Convolution2D(filters=32, kernel_size=(3, 3), strides=(2, 2), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform',bias_initializer='zeros'))
@@ -146,26 +165,9 @@ def get_model():
 	Model.add(Dropout(.5))
 	Model.add(ELU())
 '''
-	Model.add(Convolution2D(filters=24, kernel_size=(5, 5), strides=(2, 2), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
-	Model.add(Convolution2D(filters=36, kernel_size=(5, 5), strides=(2, 2), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
-	Model.add(Convolution2D(filters=48, kernel_size=(5, 5), strides=(2, 2), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
-	Model.add(Convolution2D(filters=64, kernel_size=(3, 3), strides=(1, 1), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
-	Model.add(Convolution2D(filters=64, kernel_size=(3, 3), strides=(1, 1), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
-	Model.add(Flatten())
-	Model.add(Dense(100))
-	Model.add(Dropout(.5))
-	Model.add(RELU())
-	Model.add(Dense(50))
-	Model.add(Dropout(.5))
-	Model.add(RELU())
-	Model.add(Dense(10))
-	Model.add(Dense(1))
-	Model.compile(loss='mse', optimizer='adam')
 
-	return Model
-
-train_generator = generator(train_samples, batch_size=16)
-validation_generator = generator(validation_samples, batch_size=16)
+train_generator = generator(train_samples, batch_size=16, training=True)
+validation_generator = generator(validation_samples, batch_size=16, training=False)
 
 if __name__ == '__main__':
 	print("Number of samples {0}".format(len(train_samples)))
@@ -173,5 +175,5 @@ if __name__ == '__main__':
 	model = get_model()
 	model.fit_generator(train_generator, steps_per_epoch=(len(train_samples)+15)/16,\
 			validation_data=validation_generator, nb_val_samples=len(validation_samples),\
-			nb_epoch=7)
+			nb_epoch=5)
 	model.save('model.h5')
