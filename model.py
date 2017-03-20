@@ -34,6 +34,19 @@ for line1 in lines1:
 	line1[0] = current_path
 	lines.append(line1)
 
+lines2 = []
+with open('SampleData/driving_log.csv') as csvfile:
+	reader = csv.reader(csvfile)
+	for line2 in reader:
+		lines2.append(line2)
+
+for line2 in lines2:
+	source_path = line2[0]
+	filename = source_path.split('/')[-1]
+	current_path = 'SampleData/IMG/' + filename
+	line2[0] = current_path
+	lines.append(line2)
+
 train_samples, validation_samples = train_test_split(lines, test_size=0.2)
 
 def generator(samples, batch_size=16):
@@ -86,5 +99,5 @@ if __name__ == '__main__':
 	model = get_model()
 	model.fit_generator(train_generator, steps_per_epoch=(len(train_samples)+15)/16,\
 			validation_data=validation_generator, nb_val_samples=len(validation_samples),\
-			nb_epoch=10)
+			nb_epoch=5)
 	model.save('model.h5')
