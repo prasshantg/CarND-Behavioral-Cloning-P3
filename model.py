@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 
 lines = []
 
-#Dataset1
+#Dataset with full track forward
 with open('driving_log.csv') as csvfile:
 	reader = csv.reader(csvfile)
 	for line in reader:
@@ -31,7 +31,7 @@ for line in lines:
 	current_path = 'IMG/' + filename
 	line[2] = current_path
 
-#Dataset2
+#Dataset with full track backward
 lines1 = []
 with open('TrainingData1/driving_log.csv') as csvfile:
 	reader = csv.reader(csvfile)
@@ -53,7 +53,7 @@ for line1 in lines1:
 	line1[2] = current_path
 	lines.append(line1)
 
-#Dataset3
+#Dataset with only turns forward and backward
 lines3 = []
 with open('TrainingData3/driving_log.csv') as csvfile:
 	reader = csv.reader(csvfile)
@@ -77,6 +77,7 @@ for line3 in lines3:
 
 import random
 
+#Save sample images
 index = random.randint(0, len(lines))
 test_line = lines[index]
 test_center_image = cv2.imread(test_line[0])
@@ -99,7 +100,8 @@ val_angles = []
 import sys
 from random import randint
 
-print("Augment training data")
+#Remove some images with small angle to get good distribution
+#for all angles
 train_samples = []
 total_count = 0
 zero_count = 0
@@ -120,7 +122,8 @@ print("Total samples = ", total_count)
 print("Straight drive training samples = ", zero_count)
 print("Turn drive training samples = ", nonzero_count)
 
-print("Augment validation data")
+#Remove some images with small angle to get good distribution
+#for all angles
 validation_samples = []
 total_count = 0
 zero_count = 0
@@ -153,6 +156,7 @@ n_val_angles = np.unique(val_angles).shape[0]
 print("Number of unique angles in training dataset =", n_train_angles)
 print("Number of unique angles in validation dataset =", n_val_angles)
 
+#Plot histogram for training data
 fig, ax = plt.subplots()
 ind, n_bins = np.histogram(np.array(train_angles).astype(np.float), bins=n_train_angles)
 n_bins = np.delete(n_bins, len(n_bins)-1)
@@ -161,6 +165,7 @@ ax.set_ylabel('Count')
 ax.set_title('training data')
 fig.savefig('training_data.png')
 
+#Plot histogram for validation data
 fig, ax = plt.subplots()
 ind, n_bins = np.histogram(np.array(val_angles).astype(np.float), bins=n_val_angles)
 n_bins = np.delete(n_bins, len(n_bins)-1)
@@ -190,6 +195,7 @@ def generator(samples, batch_size=16, training=True):
 				images.append(center_image)
 				angles.append(center_angle)
 
+				#Augment data only for training and if angle is not zero
 				if (training == True and center_angle != 0):
 					#Flip images from center camera
 					image_flipped = np.fliplr(center_image)
