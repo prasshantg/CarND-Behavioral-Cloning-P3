@@ -1,13 +1,13 @@
 import csv
 import cv2
 import numpy as np
+import sklearn
+import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Dropout, Lambda, ELU
 from keras.layers.convolutional import Convolution2D, Cropping2D
 
 from sklearn.model_selection import train_test_split
-
-import sklearn
 
 lines = []
 
@@ -75,8 +75,99 @@ for line3 in lines3:
 	line3[2] = current_path
 	lines.append(line3)
 
+import random
+
+index = random.randint(0, len(lines))
+test_line = lines[index]
+test_center_image = cv2.imread(test_line[0])
+cv2.imwrite('test_center_image.jpg', test_center_image)
+test_left_image = cv2.imread(test_line[1])
+cv2.imwrite('test_left_image.jpg', test_left_image)
+test_right_image = cv2.imread(test_line[2])
+cv2.imwrite('test_right_image.jpg', test_right_image)
+test_flipped_image = np.fliplr(test_center_image)
+cv2.imwrite('test_flipped_image.jpg', test_flipped_image)
+test_cropped_image = test_center_image[50:140, 0:320]
+cv2.imwrite('test_cropped_image.jpg', test_cropped_image)
+
 #Split dataset into training and validation dataset
-train_samples, validation_samples = train_test_split(lines, test_size=0.2)
+train_samples_temp, validation_samples_temp = train_test_split(lines, test_size=0.2)
+
+train_angles = []
+val_angles = []
+
+import sys
+from random import randint
+
+print("Augment training data")
+train_samples = []
+total_count = 0
+zero_count = 0
+nonzero_count = 0
+for sample in train_samples_temp:
+	test = randint(0,9)
+	if test == 3 or float(sample[3]) > 0.2 or float(sample[3]) < -0.2:
+		train_samples.append(sample)
+		total_count = total_count + 1
+		if float(sample[3]) > 0.2 or float(sample[3]) < -0.2:
+			total_count = total_count + 3
+			nonzero_count = nonzero_count + 4
+			train_samples.append(sample)
+			train_samples.append(sample)
+			train_samples.append(sample)
+zero_count = total_count - nonzero_count
+print("Total samples = ", total_count)
+print("Straight drive training samples = ", zero_count)
+print("Turn drive training samples = ", nonzero_count)
+
+print("Augment validation data")
+validation_samples = []
+total_count = 0
+zero_count = 0
+nonzero_count = 0
+for sample in validation_samples_temp:
+	test = randint(0,9)
+	if test == 3 or float(sample[3]) > 0.2 or float(sample[3]) < -0.2:
+		validation_samples.append(sample)
+		total_count = total_count + 1
+		if (float(sample[3]) > 0.2 or float(sample[3]) < -0.2):
+			total_count = total_count + 3
+			nonzero_count = nonzero_count + 4
+			validation_samples.append(sample)
+			validation_samples.append(sample)
+			validation_samples.append(sample)
+zero_count = total_count - nonzero_count
+print("Total samples = ", total_count)
+print("Straight drive training samples = ", zero_count)
+print("Turn drive training samples = ", nonzero_count)
+
+print("Visualize dataset")
+for sample in train_samples:
+	train_angles.append(sample[3])
+for sample in validation_samples:
+	val_angles.append(sample[3])
+
+n_train_angles = np.unique(train_angles).shape[0]
+n_val_angles = np.unique(val_angles).shape[0]
+
+print("Number of unique angles in training dataset =", n_train_angles)
+print("Number of unique angles in validation dataset =", n_val_angles)
+
+fig, ax = plt.subplots()
+ind, n_bins = np.histogram(np.array(train_angles).astype(np.float), bins=n_train_angles)
+n_bins = np.delete(n_bins, len(n_bins)-1)
+rect = ax.bar(n_bins, ind)
+ax.set_ylabel('Count')
+ax.set_title('training data')
+fig.savefig('training_data.png')
+
+fig, ax = plt.subplots()
+ind, n_bins = np.histogram(np.array(val_angles).astype(np.float), bins=n_val_angles)
+n_bins = np.delete(n_bins, len(n_bins)-1)
+rect = ax.bar(n_bins, ind)
+ax.set_ylabel('Count')
+ax.set_title('validation data')
+fig.savefig('validation_data.png')
 
 #Implement generator
 def generator(samples, batch_size=16, training=True):
@@ -99,7 +190,7 @@ def generator(samples, batch_size=16, training=True):
 				images.append(center_image)
 				angles.append(center_angle)
 
-				if (training == True):
+				if (training == True and center_angle != 0):
 					#Flip images from center camera
 					image_flipped = np.fliplr(center_image)
 					angle_flipped = -center_angle
@@ -146,18 +237,6 @@ def get_model():
 	Model.compile(loss='mse', optimizer='adam')
 
 	return Model
-
-'''
-	Model.add(Convolution2D(filters=16, kernel_size=(4, 4), strides=(4, 4), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
-	Model.add(Convolution2D(filters=32, kernel_size=(3, 3), strides=(2, 2), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform',bias_initializer='zeros'))
-	Model.add(Convolution2D(filters=64, kernel_size=(3, 3), strides=(2, 2), border_mode="same", use_bias=True, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
-	Model.add(Flatten())
-	Model.add(Dropout(.5))
-	Model.add(ELU())
-	Model.add(Dense(512))
-	Model.add(Dropout(.5))
-	Model.add(ELU())
-'''
 
 train_generator = generator(train_samples, batch_size=16, training=True)
 validation_generator = generator(validation_samples, batch_size=16, training=False)
