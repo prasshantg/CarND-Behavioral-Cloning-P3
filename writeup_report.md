@@ -77,8 +77,6 @@ For details about how I created the training data, see the next section.
 
 ####1. Solution Design Approach
 
-The overall strategy for deriving a model architecture was to ...
-
 My first step was to use a convolution neural network model similar to the https://github.com/commaai/research/blob/master/train_steering_model.py I thought this model might be appropriate because it was implemented for same purpose and verified.
 
 Model performed good in terms of loss for training and validation dataset. No changes required for overfitting or underfitting.
@@ -91,23 +89,23 @@ At the end of the process, the vehicle is able to drive autonomously around the 
 
 The final model architecture (model.py lines 228-243) consisted of a convolution neural network with the following layers and layer sizes
 
-Convolution layer1, kernels 24, kernel size 5x5, stride 2x2
-Activation layer1, ReLU
-Convolution layer2, kernels 36, kernel size 5x5, stride 2x2
-Activation layer2, ReLU
-Convolution layer3, kernels 48, kernel size 5x5, stride 2x2
-Activation layer3, ReLU
-Convolution layer4, kernels 64, kernel size 3x3, stride 1x1
-Activation layer4, ReLU
-Convolution layer5, kernels 64, kernel size 3x3, stride 1x1
-Activation layer5, ReLU
-Flatten, 1164
-Dense layer1, 100
-Dropout layer1, rate 0.5
-Dense layer2, 50
-Dropout layer2, rate 0.5
-Dense layer3, 10
-Dense layer4, 1
+* Convolution layer1, kernels 24, kernel size 5x5, stride 2x2 
+* Activation layer1, ReLU 
+* Convolution layer2, kernels 36, kernel size 5x5, stride 2x2 
+* Activation layer2, ReLU 
+* Convolution layer3, kernels 48, kernel size 5x5, stride 2x2 
+* Activation layer3, ReLU 
+* Convolution layer4, kernels 64, kernel size 3x3, stride 1x1 
+* Activation layer4, ReLU 
+* Convolution layer5, kernels 64, kernel size 3x3, stride 1x1 
+* Activation layer5, ReLU 
+* Flatten, 1164 
+* Dense layer1, 100 
+* Dropout layer1, rate 0.5 
+* Dense layer2, 50 
+* Dropout layer2, rate 0.5 
+* Dense layer3, 10 
+* Dense layer4, 1 
 
 ####3. Creation of the Training Set & Training Process
 
